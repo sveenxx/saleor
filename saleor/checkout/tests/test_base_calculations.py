@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from prices import Money, TaxedMoney
 
-from ...core.taxes import zero_taxed_money
+from ...core.taxes import zero_money
 from ...discount import DiscountValueType, VoucherType
 from ...discount.utils import get_product_discount_on_sale
 from ...plugins.manager import get_plugins_manager
@@ -771,7 +771,7 @@ def test_base_checkout_total(checkout_with_item, shipping_method, voucher_percen
         + shipping_channel_listings.price
         - discount_amount
     )
-    assert total == TaxedMoney(net=expected_price, gross=expected_price)
+    assert total == expected_price
 
 
 def test_base_checkout_total_high_discount(
@@ -779,18 +779,19 @@ def test_base_checkout_total_high_discount(
 ):
     # given
     manager = get_plugins_manager()
-    checkout_lines, _ = fetch_checkout_lines(checkout_with_item)
-    checkout_info = fetch_checkout_info(checkout_with_item, checkout_lines, [], manager)
-
     currency = checkout_with_item.currency
+
     discount_amount = Money(100, currency)
     checkout_with_item.shipping_method = shipping_method
     checkout_with_item.voucher_code = voucher_percentage.code
     checkout_with_item.discount = discount_amount
     checkout_with_item.save()
 
+    checkout_lines, _ = fetch_checkout_lines(checkout_with_item)
+    checkout_info = fetch_checkout_info(checkout_with_item, checkout_lines, [], manager)
+
     # when
     total = base_checkout_total(checkout_info, [], checkout_lines)
 
     # then
-    assert total == zero_taxed_money(currency)
+    assert total == zero_money(currency)
